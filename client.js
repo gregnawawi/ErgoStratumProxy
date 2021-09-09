@@ -6,14 +6,14 @@ const {ArgumentParser} = require('argparse');
 const {version} = require('./package.json');
 
 const parser = new ArgumentParser({
-    description: 'Ergo Stratum mining pool\'s proxy'
+    description: 'Ergo\'s proxy'
 });
 
 parser.add_argument('-v', '--version', {action: 'version', version});
 parser.add_argument('-s', '--server', {help: 'server ip address', required: true});
 parser.add_argument('-p', '--port', {help: 'server listening port', required: true});
 parser.add_argument('-u', '--worker', {help: 'worker name', required: true});
-parser.add_argument('-w', '--password', {help: 'worker password', default: 'x'});
+parser.add_argument('-w', '--password', {help: 'worker password', required: true});
 parser.add_argument('-l', '--listen', {help: 'listening port', default: 3000});
 parser.add_argument('-t', '--timeout', {help: 'connection timeout', default: 300});
 
@@ -40,8 +40,8 @@ const showStats = () => {
         timeMinutes = `0${timeMinutes}`;
     }
     console.log(chalk.cyanBright(`\n----------------------------------------`));
-    console.log(chalk.cyanBright(`Accepted shares: ${parameters.acceptedShares}`));
-    console.log(chalk.cyanBright(`Rejected shares: ${parameters.rejectedShares}`));
+    console.log(chalk.cyanBright(`Accepted: ${parameters.acceptedShares}`));
+    console.log(chalk.cyanBright(`Rejected: ${parameters.rejectedShares}`));
     console.log(chalk.cyanBright(`Time elapsed: ${timeHours}:${timeMinutes}`));
     console.log(chalk.cyanBright(`----------------------------------------\n`));
 }
@@ -79,10 +79,10 @@ let options = {
         console.log(chalk.red(`[ERROR] ${error.message}`))
     },
     onAuthorizeSuccess: () => {
-        console.log(chalk.greenBright('[WORKER] Worker authorized.'))
+        console.log(chalk.greenBright('[WORKER] Authorized.'))
     },
     onAuthorizeFail: () => {
-        console.log(chalk.red('[WORKER] Unable to authorize worker.'))
+        console.log(chalk.red('[WORKER] Unable to authorize.'))
     },
     onNewDifficulty: (newDiff) => {
         console.log(chalk.cyanBright(`[DIFFICULTY] New difficulty: ${newDiff}`))
@@ -116,11 +116,11 @@ let options = {
     },
     onSubmitWorkSuccess: (error, result) => {
         parameters.acceptedShares += 1;
-        console.log(chalk.greenBright('[SHARE] Share accepted.'))
+        console.log(chalk.greenBright('[SHARE] Accepted.'))
     },
     onSubmitWorkFail: (error, result) => {
         parameters.rejectedShares += 1;
-        console.log(chalk.red(`[SHARE] Share rejected. ${error}`))
+        console.log(chalk.red(`[SHARE] Rejected. ${error}`))
     },
 };
 
@@ -140,7 +140,7 @@ function connect(runNow = false) {
 
 connect(true);
 
-const handle_mining_candidate = (request, response) => {
+const handle_candidate = (request, response) => {
     response.writeHead(200, {'Content-Type': 'application/json'});
     var job = parameters.jobs[0];
     if (job) {
@@ -201,13 +201,13 @@ const server = http.createServer((request, response) => {
     // You pass two more arguments for config and middleware
     // More details here: https://github.com/vercel/serve-handler#options
     switch (request.url) {
-        case '/mining/candidate':
-            handle_mining_candidate(request, response);
+        case '/mini/candidate':
+            handle_candidate(request, response);
             break;
-        case '/mining/solution':
+        case '/mini/solution':
             handle_submit_solution(request, response);
             break;
-        case '/mining/job/completed':
+        case '/mini/job/completed':
             handle_job_completed(request, response);
             break;
         default:
@@ -217,7 +217,7 @@ const server = http.createServer((request, response) => {
 })
 
 server.listen(args.listen, () => {
-    console.log(chalk.yellowBright('Ergo Stratum Proxy'));
+    console.log(chalk.yellowBright('Ergo Proxy'));
     console.log(chalk.yellowBright(`Running at http://localhost:${args.listen}`));
     console.log(chalk.yellowBright('--------------------------------------------------\n'));
 });
